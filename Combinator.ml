@@ -96,7 +96,7 @@ let repeating_sep_combinator p sep =
                 | Success (a, qq2) -> loop (a :: acc) qq2
         in
         match run_parser (p) queue with
-        | Failure (a, qq) -> Failure (a, qq)
+        | Failure (a, qq) -> Success ("", queue)
         | Success (a, qq) ->
             let ris = loop [a] qq |> List.fold_left (fun a b -> String.cat a b) "" in
             Success (ris, qq)
