@@ -141,7 +141,7 @@ let ignore_right_combinator left right =
         | Failure (a, qq) -> Failure (a, qq)
         | Success (a, qq) ->
             match run_parser (right) qq with
-            | Failure (b, qq2) -> Failure (a, qq)
+            | Failure (b, qq2) -> Failure (b, qq2)
             | Success (_, qq2) -> Success (a, qq2)
     in
     Parser (inner_parser)
@@ -151,3 +151,4 @@ let (#~) = and_combinator;;
 let (#|) = or_combinator;;
 let (#~>) = ignore_left_combinator;;
 let (#<~) = ignore_right_combinator;;
+let (#*) = repeating_sep_combinator;;
