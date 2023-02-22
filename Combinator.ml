@@ -7,6 +7,8 @@ type parser = Parser of (char list -> result);;
 
 let whitespace = [' '; '\n'];;
 
+let run_parser (Parser par) queue = par queue;;
+
 let parse_char x =
     let inner_parser x queue =
         match queue with
@@ -83,6 +85,25 @@ let parse_int_literal =
     Parser (inner_parser)
 ;;
 
+let repeating_sep_combinator (Parser p) sep =
+    let inner_parser queue =
+        let rec loop acc queue =
+            match run_parser (parse_string sep) queue with
+            | Failure (_, qq) -> List.rev acc
+            | Success (_, qq) ->
+                match p qq with
+                | Failure (a, qq2) -> List.rev acc
+                | Success (a, qq2) -> loop (a :: acc) qq2
+        in
+        match p queue with
+        | Failure (a, qq) -> Failure (a, qq)
+        | Success (a, qq) ->
+            let ris = loop [a] qq |> List.fold_left (fun a b -> String.cat a b) "" in
+            Success (ris, qq)
+    in
+    Parser (inner_parser)
+;;
+
 let and_combinator pa pb =
     let inner_parser (Parser p_a) (Parser p_b) queue =
         match p_a queue with
@@ -107,5 +128,3 @@ let or_combinator pa pb =
 
 let (#~) = and_combinator;;
 let (#|) = or_combinator;;
-
-let run_parser (Parser par) queue = par queue;;
