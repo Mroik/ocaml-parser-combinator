@@ -84,20 +84,20 @@ let parse_int_literal =
 ;;
 
 let and_combinator pa pb =
-    let inner_parser (Parser(p_a)) (Parser(p_b)) queue =
+    let inner_parser (Parser p_a) (Parser p_b) queue =
         match p_a queue with
         | Success (a, qq) -> (
             match p_b qq with
-            | Success (b, qq2) -> Success (Some (a, b), qq2)
-            | Failure (b, qq2) -> Failure (None, queue)
+            | Success (b, qq2) -> Success (String.cat a b, qq2)
+            | Failure (b, qq2) -> Failure ("", queue)
         )
-        | Failure (a, qq) -> Failure (None, queue)
+        | Failure (a, qq) -> Failure ("", queue)
     in
     Parser (inner_parser pa pb)
 ;;
 
 let or_combinator pa pb =
-    let inner_parser (Parser(pa)) (Parser(pb)) queue =
+    let inner_parser (Parser pa) (Parser pb) queue =
         match pa queue with
         | Success (a, b) -> Success (a, b)
         | Failure (a, b) -> pb queue
@@ -107,3 +107,5 @@ let or_combinator pa pb =
 
 let (#~) = and_combinator;;
 let (#|) = or_combinator;;
+
+let run_parser (Parser par) queue = par queue;;
