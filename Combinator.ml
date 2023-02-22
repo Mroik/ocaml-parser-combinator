@@ -85,17 +85,17 @@ let parse_int_literal =
     Parser (inner_parser)
 ;;
 
-let repeating_sep_combinator (Parser p) sep =
+let repeating_sep_combinator p sep =
     let inner_parser queue =
         let rec loop acc queue =
             match run_parser (parse_string sep) queue with
             | Failure (_, qq) -> List.rev acc
             | Success (_, qq) ->
-                match p qq with
+                match run_parser (p) qq with
                 | Failure (a, qq2) -> List.rev acc
                 | Success (a, qq2) -> loop (a :: acc) qq2
         in
-        match p queue with
+        match run_parser (p) queue with
         | Failure (a, qq) -> Failure (a, qq)
         | Success (a, qq) ->
             let ris = loop [a] qq |> List.fold_left (fun a b -> String.cat a b) "" in
@@ -105,26 +105,49 @@ let repeating_sep_combinator (Parser p) sep =
 ;;
 
 let and_combinator pa pb =
-    let inner_parser (Parser p_a) (Parser p_b) queue =
-        match p_a queue with
+    let inner_parser queue =
+        match run_parser (pa) queue with
         | Success (a, qq) -> (
-            match p_b qq with
+            match run_parser (pb) qq with
             | Success (b, qq2) -> Success (String.cat a b, qq2)
             | Failure (b, qq2) -> Failure (String.cat " and " b |> String.cat a, queue)
         )
         | Failure (a, qq) -> Failure (a, queue)
     in
-    Parser (inner_parser pa pb)
+    Parser (inner_parser)
 ;;
 
 let or_combinator pa pb =
-    let inner_parser (Parser pa) (Parser pb) queue =
-        match pa queue with
+    let inner_parser queue =
+        match run_parser (pa) queue with
         | Success (a, b) -> Success (a, b)
-        | Failure (a, b) -> pb queue
+        | Failure (a, b) -> run_parser (pb) queue
     in
-    Parser (inner_parser pa pb)
+    Parser (inner_parser)
+;;
+
+let ignore_left_combinator left right =
+    let inner_parser queue =
+        match run_parser (left) queue with
+        | Failure (a, qq) -> Failure (a, qq)
+        | Success (_, qq) -> run_parser (right) qq
+    in
+    Parser (inner_parser)
+;;
+
+let ignore_right_combinator left right =
+    let inner_parser queue =
+        match run_parser (left) queue with
+        | Failure (a, qq) -> Failure (a, qq)
+        | Success (a, qq) ->
+            match run_parser (right) qq with
+            | Failure (b, qq2) -> Failure (a, qq)
+            | Success (_, qq2) -> Success (a, qq2)
+    in
+    Parser (inner_parser)
 ;;
 
 let (#~) = and_combinator;;
 let (#|) = or_combinator;;
+let (#~>) = ignore_left_combinator;;
+let (#<~) = ignore_right_combinator;;
