@@ -1,9 +1,9 @@
-type 'a result =
-    | Success of 'a * char list
-    | Failure of 'a * char list
+type result =
+    | Success of string * char list
+    | Failure of string * char list
 ;;
 
-type 'a parser = Parser of (char list -> 'a result);;
+type parser = Parser of (char list -> result);;
 
 let whitespace = [' '; '\n'];;
 
@@ -43,7 +43,7 @@ let parse_str_literal =
     let inner_parser queue =
         let rec loop acc qq =
             match qq with
-            | [] -> Failure ("", queue)
+            | [] -> Failure ("closing \"", queue)
             | x :: xs ->
                 if x = '"' then
                     Success (List.append (List.rev acc) ['"'] |> List.append ['"'] |> List.to_seq |> String.of_seq, xs)
@@ -51,12 +51,12 @@ let parse_str_literal =
                     loop (x :: acc) xs
         in
         match queue with
-        | [] -> Failure ("", queue)
+        | [] -> Failure ("\"", queue)
         | x :: xs ->
             if x = '"' then
                 loop [] xs
             else
-                Failure ("", queue)
+                Failure ("\"", queue)
     in
     Parser (inner_parser)
 ;;
@@ -65,7 +65,7 @@ let parse_int_literal =
     let inner_parser queue =
         let rec loop acc qq =
             match acc, qq with
-            | [], [] -> Failure ("", queue)
+            | [], [] -> Failure ("digit", queue)
             | _, [] -> Success (List.rev acc |> List.to_seq |> String.of_seq, qq)
             | _, x :: xs ->
                 if Char.code x >= Char.code '0' && Char.code x <= Char.code '9' then
@@ -74,9 +74,9 @@ let parse_int_literal =
                     if List.length acc > 0 then
                         Success (List.rev acc |> List.to_seq |> String.of_seq, qq)
                     else
-                        Failure ("", queue)
+                        Failure ("digit", queue)
                 else
-                    Failure ("", queue)
+                    Failure ("digit", queue)
         in
         loop [] queue
     in
@@ -89,9 +89,9 @@ let and_combinator pa pb =
         | Success (a, qq) -> (
             match p_b qq with
             | Success (b, qq2) -> Success (String.cat a b, qq2)
-            | Failure (b, qq2) -> Failure ("", queue)
+            | Failure (b, qq2) -> Failure (String.cat " and " b |> String.cat a, queue)
         )
-        | Failure (a, qq) -> Failure ("", queue)
+        | Failure (a, qq) -> Failure (a, queue)
     in
     Parser (inner_parser pa pb)
 ;;
