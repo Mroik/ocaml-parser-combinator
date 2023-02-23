@@ -72,13 +72,8 @@ let parse_int_literal =
             | _, x :: xs ->
                 if Char.code x >= Char.code '0' && Char.code x <= Char.code '9' then
                     loop (x :: acc) xs
-                else if List.exists (fun a -> x = a) whitespace then
-                    if List.length acc > 0 then
-                        Success (List.rev acc |> List.to_seq |> String.of_seq, qq)
-                    else
-                        Failure ("digit", queue)
                 else
-                    Failure ("digit", queue)
+                    Success (List.rev acc |> List.to_seq |> String.of_seq, qq)
         in
         loop [] queue
     in
