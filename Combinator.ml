@@ -69,6 +69,11 @@ let parse_int_literal =
             match acc, qq with
             | [], [] -> Failure ("digit", queue)
             | _, [] -> Success (List.rev acc |> List.to_seq |> String.of_seq, qq)
+            | [], x :: xs ->
+                if Char.code x >= Char.code '0' && Char.code x <= Char.code '9' then
+                    loop (x :: acc) xs
+                else
+                    Failure ("digit", queue)
             | _, x :: xs ->
                 if Char.code x >= Char.code '0' && Char.code x <= Char.code '9' then
                     loop (x :: acc) xs
