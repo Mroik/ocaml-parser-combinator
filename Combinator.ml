@@ -1,9 +1,9 @@
-type result =
-    | Success of string * char list
-    | Failure of string * char list
+type 'a result =
+    | Success of 'a * char list
+    | Failure of 'a * char list
 ;;
 
-type parser = Parser of (char list -> result);;
+type 'a parser = Parser of (char list -> 'a result);;
 
 let whitespace = [' '; '\n'];;
 
@@ -152,3 +152,19 @@ let (#|) = or_combinator;;
 let (#~>) = ignore_left_combinator;;
 let (#<~) = ignore_right_combinator;;
 let (#*) = repeating_sep_combinator;;
+
+let skip_whitespace =
+    let inner_parser queue =
+        let rec loop qq =
+            match qq with
+            | [] -> Success ("", qq)
+            | x :: xs ->
+                if List.mem x whitespace then
+                    loop xs
+                else
+                    Success ("", qq)
+        in
+        loop queue
+    in
+    Parser (inner_parser)
+;;
