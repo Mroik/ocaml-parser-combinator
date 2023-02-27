@@ -5,7 +5,7 @@ type 'a result =
 
 type 'a parser = Parser of (char list -> 'a result);;
 
-let whitespace = [' '; '\n'];;
+let whitespace = [' '; '\n'; '\t'];;
 
 let run_parser (Parser par) queue = par queue;;
 
