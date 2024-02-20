@@ -1,1 +1,1 @@
-Experimenting with a parser combinator implementations
+Experimenting with parser combinators implementations
